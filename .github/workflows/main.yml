@@ -1,0 +1,34 @@
+# A GitHub Actions port of the old .build.yml.  This has the advantage of being
+# able to use GitHub actions, contexts, secrets, etc, to do more in the future
+# than merely check whether a build succeeds or fails.  It also allows to see
+# whether builds succeed or fail on forks, which also has its advantages.
+#
+# The disadvantage is that it's less portable than .build.yml, which will work
+# on at least GitHub, GitLab, and SourceHut, where GitHub Actions only work on
+# GitHub.
+#
+name: build
+on: [push, pull_request]
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        container: alpine:edge
+        steps:
+            - name: packages
+              run: |
+                apk add clang gcc libevdev-dev libinput-dev libxkbcommon-dev libxml2-dev meson musl-dev wayland-dev wayland-protocols wlroots-dev xwayland
+            # actions/checkout@v3 clones the repository
+            - uses: actions/checkout@v3
+            - name: build-gcc
+              run: |
+                CC=gcc meson setup build-gcc
+                ninja -C build-gcc
+            - name: build-clang
+              run: |
+                CC=clang meson setup build-clang
+                ninja -C build-clang
+              -run: |
+                meson setup build
+            - name: build
+              run: |
+                ninja -C build
